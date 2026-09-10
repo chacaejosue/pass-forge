@@ -1,118 +1,140 @@
-# PassForge — Generador de contraseñas (aprendizaje + versión segura)
+<p align="center">
+  <img
+    src="./assets/portada-passforge.png"
+    alt="PassForge — Generador de contraseñas en Python"
+    width="100%"
+  />
+</p>
 
-![Python](https://img.shields.io/badge/Python-3.6+-3776AB?logo=python&logoColor=white)
-![Licencia](https://img.shields.io/badge/Licencia-MIT-green)
-![Estado](https://img.shields.io/badge/Estado-En%20desarrollo-orange)
+<p align="center">
+  Generador de contraseñas por consola desarrollado en Python que documenta
+  la evolución de una implementación educativa basada en <code>random</code>
+  hacia una versión mejorada utilizando <code>secrets</code>.
+</p>
 
-Este repositorio empezó como un proyecto básico para practicar Python (Coursera): un generador de contraseñas por consola.  
-Con el tiempo, lo revisé desde el punto de vista de seguridad y encontré varios problemas en la **primera versión** (v1).  
-Luego implementé una **versión mejorada** (v2) usando `secrets` y una política mínima de complejidad.
-
-## Uso rápido
-
-1. Ejecuta la versión segura desde `src/v2_generador_seguro.py`.
-2. Ingresa una longitud de al menos 12 caracteres.
-3. Copia la contraseña generada y úsala donde la necesites.
-
-> **Importante:** La v1 sirve como ejemplo educativo de lo que *NO* debe usarse para generar contraseñas reales.  
-> Si necesitas contraseñas para uso real, usa la v2 (o una variante equivalente).
-
----
-
-## Contenido
-- [Resumen rápido](#resumen-rápido)
-- [v1 (original): análisis y vulnerabilidades](#v1-original-análisis-y-vulnerabilidades)
-  - [1) `random` no es criptográficamente seguro](#1-random-no-es-criptográficamente-seguro)
-  - [2) No hay política de complejidad](#2-no-hay-política-de-complejidad)
-  - [3) “Más caracteres” no arregla el problema](#3-más-caracteres-no-arregla-el-problema)
-  - [4) Errores de diseño menores (calidad/UX)](#4-errores-de-diseño-menores-calidadux)
-- [v2 (mejorada): por qué es más segura](#v2-mejorada-por-qué-es-más-segura)
-  - [1) `secrets` (CSPRNG)](#1-secrets-csprng)
-  - [2) Longitud mínima real](#2-longitud-mínima-real)
-  - [3) Reglas de complejidad](#3-reglas-de-complejidad)
-- [Comparación v1 vs v2](#comparación-v1-vs-v2)
-- [Ejemplos de ejecución](#ejemplos-de-ejecución)
-- [Próximos pasos y mejoras](#próximos-pasos-y-mejoras)
-- [Licencia](#licencia)
+<p align="center">
+  <img
+    src="https://img.shields.io/badge/Python-3.6+-3776AB?style=for-the-badge&logo=python&logoColor=white"
+    alt="Python 3.6+"
+  />
+  <img
+    src="https://img.shields.io/badge/Interfaz-CLI-181717?style=for-the-badge"
+    alt="CLI"
+  />
+  <img
+    src="https://img.shields.io/badge/Licencia-MIT-2ea44f?style=for-the-badge"
+    alt="Licencia MIT"
+  />
+  <img
+    src="https://img.shields.io/badge/Estado-En%20desarrollo-f59e0b?style=for-the-badge"
+    alt="Estado: En desarrollo"
+  />
+</p>
 
 ---
 
-## Resumen rápido
+## Sobre PassForge
 
-**Problema principal en v1:** usa `random` (Mersenne Twister), un generador pseudoaleatorio diseñado para simulación, no para seguridad.  
-En seguridad, “parece aleatorio” no es suficiente: importa que sea resistente ante un adversario.
+PassForge comenzó como un proyecto básico para practicar Python mediante la creación de un generador de contraseñas por consola.
 
-**v2 soluciona lo principal** al usar `secrets` y añade reglas mínimas para evitar contraseñas débiles.
+La primera versión (`v1`) utilizaba el módulo `random`. Posteriormente revisé esa implementación desde una perspectiva de seguridad y detecté que su fuente de aleatoriedad no era apropiada para generar valores que deban ser difíciles de predecir.
+
+A partir de esa revisión desarrollé una segunda versión (`v2`) utilizando `secrets`, junto con una longitud mínima y reglas básicas sobre los caracteres generados.
+
+El repositorio conserva ambas versiones con un propósito educativo:
+
+> Mostrar cómo una solución funcional puede evolucionar cuando se revisan sus decisiones de diseño y seguridad.
 
 ---
 
-## v1 (original): análisis y vulnerabilidades
+## Inicio rápido
 
-Esta fue la idea inicial (simplificada):
+### Requisitos
+
+- Python 3.6 o superior.
+- No requiere dependencias externas.
+
+### Ejecutar la versión actual
+
+```bash
+python src/v2_generador_seguro.py
+```
+
+El programa solicita la longitud de la contraseña y aplica una longitud mínima de **12 caracteres**.
+
+> [!WARNING]
+> La versión ubicada en `legacy/` se conserva únicamente como referencia educativa. Para utilizar el generador, ejecuta la versión disponible en `src/`.
+
+---
+
+## Estructura del proyecto
+
+```text
+pass-forge/
+├── assets/
+│   └── portada-passforge.png
+├── legacy/
+│   └── v1_generador_base.py
+├── src/
+│   └── v2_generador_seguro.py
+├── .gitignore
+├── LICENSE
+└── README.md
+```
+
+- `legacy/` contiene la implementación original.
+- `src/` contiene la versión actual del generador.
+- `assets/` almacena los recursos visuales utilizados por el repositorio.
+
+---
+
+## Evolución del proyecto
+
+### v1 — Implementación original
+
+La primera versión utilizaba `random.choice()` para seleccionar los caracteres de la contraseña.
 
 ```python
 import random
 
 def generador():
-  caracter = '@#$_&-+()/*:;!?~`£¢€¥^°%abcdefghijklmnñopqrstuvwxyzABCDEFGHIJKLMNÑOPQRSTUVWXYZ1234567890'
-  acumulador = ''
-  entrada = int(input('Longitud de la contraseña (mayor a 9 caracteres): '))
-  for i in range(0, entrada):
-      acumulador += random.choice(caracter)
-  print('Su contraseña generada:', acumulador)
+    caracter = (
+        '@#$_&-+()/*:;!?~`£¢€¥^°%'
+        'abcdefghijklmnñopqrstuvwxyz'
+        'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'
+        '1234567890'
+    )
+
+    acumulador = ''
+    entrada = int(
+        input('Longitud de la contraseña (mayor a 9 caracteres): ')
+    )
+
+    for i in range(0, entrada):
+        acumulador += random.choice(caracter)
+
+    print('Su contraseña generada:', acumulador)
 
 generador()
 ```
 
-### 1) `random` no es criptográficamente seguro
+### ¿Cuál era el problema?
 
-- `random` en Python está basado en **Mersenne Twister**, excelente para simulaciones, pero **no** para criptografía.
-- En términos prácticos: un PRNG no criptográfico puede ser **predecible** si un atacante llega a conocer o reconstruir su estado interno (por observación suficiente de salidas, o por condiciones de inicialización/entorno, o por acceso parcial al proceso).
-- Por eso la propia documentación de Python recomienda `secrets` para contraseñas y tokens.
+El módulo `random` de Python utiliza **Mersenne Twister**, un generador pseudoaleatorio adecuado para simulaciones y otros usos generales, pero no está diseñado para generar valores que necesiten ser resistentes frente a predicción.
 
-**Qué significa “no apto”:**
-- No es que “siempre sea trivial romperlo”, sino que **no cumple el estándar** que se exige para contraseñas en entornos reales.
-- En seguridad, si algo no es CSPRNG, se considera un riesgo.
+Una contraseña puede parecer aleatoria visualmente y aun así proceder de una fuente que no es apropiada para este propósito.
 
-> Conclusión: aunque genere cadenas “que se ven random”, **no es una base correcta para contraseñas**.
+Además, la primera implementación:
 
-### 2) No hay política de complejidad
-
-La v1 puede generar contraseñas como:
-- solo números,
-- solo letras minúsculas,
-- sin símbolos,
-- sin mezcla de clases.
-
-Aunque muchas organizaciones ya no exigen “complejidad” estricta si la longitud es grande, en contraseñas cortas/medias sí ayuda a evitar resultados débiles por azar.
-
-Ejemplo (posible en v1 con longitud 10):
-- `aaaaaaaaaa`
-- `1234567890`
-- `abcdefghij`
-
-No es lo típico, pero **puede ocurrir** y no hay nada que lo impida.
-
-### 3) “Más caracteres” no arregla el problema
-
-En v1 hay muchos caracteres permitidos. Eso aumenta el espacio de búsqueda, sí.  
-Pero el problema principal no es el tamaño del alfabeto: es el **tipo de aleatoriedad**.
-
-Si la aleatoriedad no es criptográficamente segura, aumentar el alfabeto **no convierte** el sistema en seguro.
-
-### 4) Errores de diseño menores (calidad/UX)
-
-No son “vulnerabilidades” graves, pero sí detalles mejorables:
-
-- Límite mínimo: el mensaje dice “mayor a 9”, pero el criterio es `<= 9`, o sea mínimo real 10.
-- Se imprime la contraseña directamente; en algunos entornos esto puede quedar en historial/logs (depende de dónde se ejecute).
-- No hay estructura para reutilizar el generador desde otro módulo (está “pegado” al `input()` y al `print()`).
+- no garantiza la presencia de diferentes clases de caracteres;
+- mezcla la lógica del generador con `input()` y `print()`;
+- tiene margen de mejora en validación y experiencia de uso.
 
 ---
 
-## v2 (mejorada): por qué es más segura
+## v2 — Implementación mejorada
 
-Versión mejorada (la idea principal):
+La segunda versión sustituye `random` por `secrets`.
 
 ```python
 import secrets
@@ -122,93 +144,170 @@ def generador():
     letras = string.ascii_letters
     numeros = string.digits
     simbolos = string.punctuation
+
     caracteres = letras + numeros + simbolos
 
-    # mínimo 12
-    # genera usando secrets
-    # garantiza presencia de mayús, minús, número y símbolo
+    # longitud mínima: 12
+    # generación utilizando secrets
+    # validación de diferentes clases de caracteres
 ```
 
-### 1) `secrets` (CSPRNG)
+### `secrets`
 
-- `secrets` usa una fuente de aleatoriedad adecuada para seguridad (CSPRNG), alimentada por el sistema operativo.
-- Está diseñada específicamente para:
-  - contraseñas
-  - tokens
-  - credenciales temporales
-  - valores que no deben ser predecibles
+`secrets` está diseñado para generar valores que no deberían resultar predecibles, como:
 
-**Este es el cambio más importante del proyecto.**
+- contraseñas;
+- tokens;
+- credenciales temporales;
+- otros valores sensibles.
 
-### 2) Longitud mínima real
+Este es el cambio más importante entre ambas versiones.
 
-- v2 fuerza un mínimo (por ejemplo 12).
-- Esto eleva muchísimo la resistencia contra fuerza bruta, incluso si alguien intenta adivinar.
+### Longitud mínima
 
-### 3) Reglas de complejidad
+La versión actual utiliza una longitud mínima de **12 caracteres**.
 
-v2 comprueba que la contraseña tenga:
-- al menos una mayúscula
-- al menos una minúscula
-- al menos un número
-- al menos un símbolo
+Si el usuario introduce una longitud inferior, el programa la ajusta al mínimo establecido.
 
-Esto evita resultados “accidentalmente débiles”.
+### Reglas de composición
 
-> Nota: Para contraseñas muy largas, la complejidad importa menos.  
-> Para longitudes moderadas (12–16), sigue siendo una buena regla práctica.
+La contraseña generada incluye al menos:
+
+- una letra mayúscula;
+- una letra minúscula;
+- un número;
+- un símbolo.
+
+Estas reglas evitan resultados que, por azar, contengan únicamente una clase de caracteres.
 
 ---
 
-## Comparación v1 vs v2
+## Comparación entre versiones
 
-| Aspecto | v1 (original) | v2 (mejorada) |
+| Característica | v1 | v2 |
 |---|---|---|
-| RNG | `random` (no CSPRNG) | `secrets` (CSPRNG) |
-| Uso recomendado | Simulación/juegos | Tokens/contraseñas |
-| Longitud mínima | 10 (por validación) | 12 (o la que definas) |
-| Complejidad | No garantiza mezcla | Garantiza mayús/minús/número/símbolo |
-| Probabilidad de contraseñas “pobres” | Existe | Mucho menor (por validación) |
+| Fuente de aleatoriedad | `random` | `secrets` |
+| Tipo de generador | PRNG de propósito general | CSPRNG |
+| Longitud mínima | 10 | 12 |
+| Mayúsculas | No garantizadas | Garantizadas |
+| Minúsculas | No garantizadas | Garantizadas |
+| Números | No garantizados | Garantizados |
+| Símbolos | No garantizados | Garantizados |
+| Uso dentro del proyecto | Referencia educativa | Versión actual |
 
 ---
 
-## Ejemplos de ejecución
+## ¿Por qué no basta con usar más caracteres?
 
-### v1 (original)
+La primera versión ya permitía utilizar un conjunto amplio de caracteres.
 
-Entrada:
-- Longitud: `10`
+Eso aumenta el espacio de combinaciones posibles, pero no resuelve el problema principal: **la fuente de aleatoriedad**.
 
-Salida (ejemplo):
-- `Su contraseña generada: aF3p0z...` *(ejemplo)*
+Aumentar el número de caracteres disponibles no convierte un generador pseudoaleatorio de propósito general en uno criptográficamente adecuado.
 
-Problema: aunque “se vea aleatoria”, el origen (`random`) **no está diseñado** para resistir ataques reales.
+Por eso el cambio fundamental de PassForge no fue añadir más símbolos, sino pasar de:
 
-### v2 (mejorada)
+```python
+random.choice(...)
+```
 
-Entrada:
-- Longitud: `8`
+a una generación basada en:
 
-Salida:
-- `Por seguridad, ajustaremos la longitud a 12.`
-- `Tu contraseña: ...` *(ejemplo)*
-
-Ventaja: usa `secrets` y cumple reglas mínimas.
+```python
+secrets
+```
 
 ---
 
-## Próximos pasos y mejoras
+## Ejemplo de ejecución
 
-Este proyecto es una base para seguir practicando Python. Algunas funcionalidades que me gustaría añadir más adelante son:
+```text
+Longitud de la contraseña: 16
 
-* **Filtro de caracteres:** Permitir al usuario elegir si quiere excluir ciertos símbolos que a veces dan problemas en algunas webs (como las comillas o barras).
-* **Exportación a archivo:** Añadir una opción para guardar la contraseña generada de forma local.
-* **Analizador de fuerza:** Integrar un módulo que calcule el tiempo estimado de crackeo de la contraseña generada.
+Tu contraseña: ***************
+```
+
+La contraseña mostrada arriba es únicamente ilustrativa.
+
+Si se introduce una longitud inferior al mínimo:
+
+```text
+Longitud de la contraseña: 8
+
+Por seguridad, ajustaremos la longitud a 12.
+Tu contraseña: ************
+```
+
+---
+
+## Consideraciones de seguridad
+
+PassForge es principalmente un **proyecto educativo**.
+
+La versión `v2` mejora la implementación original utilizando una fuente de aleatoriedad apropiada para generar valores sensibles, pero el proyecto no pretende sustituir un gestor de contraseñas completo.
+
+Entre otras cosas, un sistema completo de gestión de credenciales también debe considerar aspectos como:
+
+- almacenamiento seguro;
+- protección del portapapeles;
+- manejo de datos sensibles;
+- integración con otros sistemas;
+- políticas y requisitos específicos del entorno donde se utilice.
+
+---
+
+## Próximos pasos
+
+Algunas mejoras planteadas para futuras versiones:
+
+- [ ] Permitir seleccionar los conjuntos de caracteres utilizados.
+- [ ] Permitir excluir determinados símbolos.
+- [ ] Separar mejor la lógica de generación de la interfaz CLI.
+- [ ] Añadir validaciones de entrada adicionales.
+- [ ] Incorporar pruebas automatizadas.
+- [ ] Mejorar la experiencia de uso desde consola.
+
+---
+
+## Aprendizajes del proyecto
+
+PassForge me permitió practicar y reforzar conceptos como:
+
+`Python` · `random` · `secrets` · `string` · `CLI` · `validación` · `aleatoriedad` · `código seguro`
+
+También sirvió como ejercicio para revisar una solución anterior y documentar su evolución en lugar de reemplazarla sin conservar el razonamiento detrás de los cambios.
+
+---
+
+## Autor
+
+**Josué Chacae**
+
+<p>
+  <a href="https://josuechacae.dev">
+    <img
+      src="https://img.shields.io/badge/Portafolio-josuechacae.dev-0f766e?style=flat-square"
+      alt="Portafolio"
+    />
+  </a>
+  <a href="https://www.linkedin.com/in/chacae-josue">
+    <img
+      src="https://img.shields.io/badge/LinkedIn-Josué_Chacae-0A66C2?style=flat-square&logo=linkedin&logoColor=white"
+      alt="LinkedIn"
+    />
+  </a>
+  <a href="https://github.com/chacaejosue">
+    <img
+      src="https://img.shields.io/badge/GitHub-chacaejosue-181717?style=flat-square&logo=github&logoColor=white"
+      alt="GitHub"
+    />
+  </a>
+</p>
 
 ---
 
 ## Licencia
 
-Este proyecto está bajo la [Licencia MIT](LICENSE). 
+Este proyecto se distribuye bajo la [Licencia MIT](LICENSE).
 
-Puedes usarlo, modificarlo y distribuirlo libremente, siempre que mantengas el aviso de copyright y la nota de licencia. ¡Espero que te sirva para aprender tanto como me sirvió a mí!
+Puedes utilizarlo, modificarlo y distribuirlo respetando los términos de la licencia.
