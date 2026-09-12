@@ -7,15 +7,20 @@
 </p>
 
 <p align="center">
-  Generador de contraseñas por consola desarrollado en Python que documenta
+  Generador de contraseñas desarrollado en Python que documenta
   la evolución de una implementación educativa basada en <code>random</code>
-  hacia una versión mejorada utilizando <code>secrets</code>.
+  hacia una versión mejorada utilizando <code>secrets</code>,
+  con interfaces CLI y web en desarrollo.
 </p>
 
 <p align="center">
   <img
-    src="https://img.shields.io/badge/Python-3.6+-3776AB?style=for-the-badge&logo=python&logoColor=white"
-    alt="Python 3.6+"
+    src="https://img.shields.io/badge/Python-3.9+-3776AB?style=for-the-badge&logo=python&logoColor=white"
+    alt="Python 3.9+"
+  />
+  <img
+    src="https://img.shields.io/badge/Flask-Web-000000?style=for-the-badge&logo=flask&logoColor=white"
+    alt="Flask"
   />
   <img
     src="https://img.shields.io/badge/Interfaz-CLI-181717?style=for-the-badge"
@@ -41,7 +46,9 @@ La primera versión (`v1`) utilizaba el módulo `random`. Posteriormente revisé
 
 A partir de esa revisión desarrollé una segunda versión (`v2`) utilizando `secrets`, junto con una longitud mínima y reglas básicas sobre los caracteres generados.
 
-La versión actual también separa la lógica de generación de la interacción por consola, permitiendo reutilizar el generador desde otras interfaces en el futuro.
+La versión actual separa la lógica de generación de la interacción por consola, permitiendo reutilizar el generador desde otras interfaces.
+
+Como siguiente etapa, PassForge comienza su transición hacia una aplicación web mediante Flask. Actualmente la capa web contiene una aplicación mínima y una ruta inicial para comprobar el funcionamiento del servidor. La generación de contraseñas todavía permanece desacoplada de esta interfaz.
 
 El repositorio conserva la implementación original junto con la versión actual con un propósito educativo:
 
@@ -53,10 +60,40 @@ El repositorio conserva la implementación original junto con la versión actual
 
 ### Requisitos
 
-- Python 3.6 o superior.
-- No requiere dependencias externas.
+- Python 3.9 o superior.
+- Las dependencias se encuentran en `requirements.txt`.
 
-### Ejecutar la versión actual
+### Crear un entorno virtual
+
+Se recomienda utilizar un entorno virtual para aislar las dependencias del proyecto.
+
+Desde la raíz:
+
+```bash
+python -m venv .venv
+```
+
+En Windows PowerShell:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+En Linux o macOS:
+
+```bash
+source .venv/bin/activate
+```
+
+### Instalar dependencias
+
+Con el entorno virtual activado:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+### Ejecutar la interfaz CLI
 
 Desde la raíz del proyecto:
 
@@ -67,7 +104,27 @@ python -m src.cli
 El programa solicita la longitud de la contraseña y aplica una longitud mínima de **12 caracteres**.
 
 > [!WARNING]
-> La implementación ubicada en `legacy/` se conserva únicamente como referencia educativa. Para utilizar la versión actual, ejecuta la interfaz disponible en `src.cli`.
+> La implementación ubicada en `legacy/` se conserva únicamente como referencia educativa. Para utilizar la versión actual por consola, ejecuta `src.cli`.
+
+### Ejecutar la aplicación web
+
+La aplicación web se encuentra actualmente en una etapa inicial de desarrollo.
+
+Desde la raíz del proyecto:
+
+```bash
+python -m flask --app src.web run --debug
+```
+
+Flask iniciará un servidor local disponible normalmente en:
+
+```text
+http://127.0.0.1:5000
+```
+
+Al acceder desde el navegador se mostrará una respuesta básica que permite comprobar que la aplicación Flask está funcionando.
+
+La generación de contraseñas todavía no está integrada con esta interfaz.
 
 ---
 
@@ -112,20 +169,24 @@ pass-forge/
 ├── src/
 │   ├── __init__.py
 │   ├── cli.py
-│   └── generator.py
+│   ├── generator.py
+│   └── web.py
 ├── tests/
 │   └── test_generator.py
 ├── .gitignore
 ├── LICENSE
-└── README.md
+├── README.md
+└── requirements.txt
 ```
 
 - `legacy/` conserva la implementación original basada en `random`.
 - `src/generator.py` contiene la lógica de generación de contraseñas.
 - `src/cli.py` contiene la interacción mediante consola.
+- `src/web.py` contiene la aplicación Flask inicial.
 - `src/__init__.py` permite utilizar `src` como paquete de Python.
 - `tests/test_generator.py` contiene las pruebas automatizadas del generador.
 - `assets/` almacena los recursos visuales utilizados por el repositorio.
+- `requirements.txt` declara las dependencias externas del proyecto.
 
 ---
 
@@ -252,7 +313,7 @@ Estas reglas evitan resultados que, por azar, contengan únicamente una clase de
 
 ### Separación entre lógica e interfaz
 
-La versión actual divide el programa en dos responsabilidades principales:
+La versión actual divide el programa en responsabilidades independientes:
 
 ```text
 src/cli.py
@@ -270,6 +331,50 @@ resultado
 
 ---
 
+## Aplicación web — Etapa inicial
+
+PassForge incorpora Flask como primer paso para añadir una interfaz web.
+
+La aplicación inicial se encuentra en:
+
+```text
+src/web.py
+```
+
+Actualmente contiene una ruta básica:
+
+```python
+from flask import Flask
+
+
+app = Flask(__name__)
+
+
+@app.get("/")
+def index():
+    return "PassForge está funcionando"
+```
+
+Esta etapa permite introducir conceptos básicos como:
+
+- servidor web;
+- aplicación Flask;
+- rutas;
+- peticiones HTTP;
+- respuestas HTTP.
+
+Por el momento, la aplicación web y el generador permanecen desacoplados:
+
+```text
+CLI ──────→ generator.py
+
+WEB ──────→ respuesta básica de Flask
+```
+
+La integración entre Flask y `generate_password()` se realizará en una etapa posterior.
+
+---
+
 ## Comparación entre versiones
 
 | Característica | v1 | v2 |
@@ -282,6 +387,7 @@ resultado
 | Números | No garantizados | Garantizados |
 | Símbolos | No garantizados | Garantizados |
 | Separación entre lógica e interfaz | No | Sí |
+| Pruebas automatizadas | No | Sí |
 | Uso dentro del proyecto | Referencia educativa | Versión actual |
 
 ---
@@ -316,6 +422,8 @@ secrets.randbelow(...)
 
 ## Ejemplo de ejecución
 
+### CLI
+
 ```text
 Longitud de la contraseña (mínimo 12): 16
 Tu contraseña segura: ****************
@@ -339,13 +447,33 @@ Longitud de la contraseña (mínimo 12): hola
 Longitud de la contraseña (mínimo 12):
 ```
 
+### Web
+
+Al ejecutar:
+
+```bash
+python -m flask --app src.web run --debug
+```
+
+y visitar:
+
+```text
+http://127.0.0.1:5000
+```
+
+la aplicación responde actualmente:
+
+```text
+PassForge está funcionando
+```
+
 ---
 
 ## Consideraciones de seguridad
 
 PassForge es principalmente un **proyecto educativo**.
 
-La versión `v2` mejora la implementación original utilizando una fuente de aleatoriedad apropiada para generar valores sensibles, pero el proyecto no pretende sustituir un gestor de contraseñas completo.
+La versión actual mejora la implementación original utilizando una fuente de aleatoriedad apropiada para generar valores sensibles, pero el proyecto no pretende sustituir un gestor de contraseñas completo.
 
 Entre otras cosas, un sistema completo de gestión de credenciales también debe considerar aspectos como:
 
@@ -354,6 +482,8 @@ Entre otras cosas, un sistema completo de gestión de credenciales también debe
 - manejo de datos sensibles;
 - integración con otros sistemas;
 - políticas y requisitos específicos del entorno donde se utilice.
+
+La aplicación Flask se encuentra todavía en una etapa inicial y actualmente no procesa ni transmite contraseñas.
 
 ---
 
@@ -367,6 +497,9 @@ Algunas mejoras planteadas para futuras versiones:
 - [ ] Añadir validaciones de entrada adicionales.
 - [x] Incorporar pruebas automatizadas.
 - [ ] Mejorar la experiencia de uso desde consola.
+- [x] Añadir la estructura inicial de la aplicación Flask.
+- [ ] Integrar el generador de contraseñas con Flask.
+- [ ] Añadir una interfaz web para generar contraseñas.
 
 ---
 
@@ -374,13 +507,15 @@ Algunas mejoras planteadas para futuras versiones:
 
 PassForge me permitió practicar y reforzar conceptos como:
 
-`Python` · `random` · `secrets` · `string` · `CLI` · `unittest` · `testing` · `validación` · `aleatoriedad` · `modularización` · `código seguro`
+`Python` · `random` · `secrets` · `string` · `CLI` · `Flask` · `HTTP` · `rutas` · `unittest` · `testing` · `validación` · `aleatoriedad` · `modularización` · `código seguro`
 
 También sirvió como ejercicio para revisar una solución anterior y documentar su evolución en lugar de reemplazarla sin conservar el razonamiento detrás de los cambios.
 
-La separación entre `generator.py` y `cli.py` añade además una nueva etapa al proyecto: desacoplar la lógica principal de la interfaz que la utiliza.
+La separación entre `generator.py` y `cli.py` añade una nueva etapa al proyecto: desacoplar la lógica principal de la interfaz que la utiliza.
 
 Las pruebas automatizadas permiten verificar el comportamiento esperado del generador y detectar regresiones antes de continuar incorporando nuevas funcionalidades o interfaces.
+
+La incorporación inicial de Flask introduce además los conceptos básicos necesarios para comenzar a exponer la lógica existente mediante una aplicación web.
 
 ---
 
