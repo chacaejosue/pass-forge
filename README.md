@@ -71,6 +71,36 @@ El programa solicita la longitud de la contraseña y aplica una longitud mínima
 
 ---
 
+## Pruebas
+
+PassForge incluye pruebas automatizadas para comprobar el comportamiento de la lógica principal del generador.
+
+Las pruebas utilizan `unittest`, incluido en la biblioteca estándar de Python, por lo que no requieren instalar dependencias adicionales.
+
+Desde la raíz del proyecto:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Las pruebas verifican que:
+
+- el resultado generado sea una cadena de texto;
+- se respete la longitud solicitada;
+- se aplique la longitud mínima;
+- exista al menos una letra minúscula;
+- exista al menos una letra mayúscula;
+- exista al menos un número;
+- exista al menos un símbolo.
+
+Si todas las pruebas se completan correctamente, el resultado finalizará con:
+
+```text
+OK
+```
+
+---
+
 ## Estructura del proyecto
 
 ```text
@@ -83,6 +113,8 @@ pass-forge/
 │   ├── __init__.py
 │   ├── cli.py
 │   └── generator.py
+├── tests/
+│   └── test_generator.py
 ├── .gitignore
 ├── LICENSE
 └── README.md
@@ -92,6 +124,7 @@ pass-forge/
 - `src/generator.py` contiene la lógica de generación de contraseñas.
 - `src/cli.py` contiene la interacción mediante consola.
 - `src/__init__.py` permite utilizar `src` como paquete de Python.
+- `tests/test_generator.py` contiene las pruebas automatizadas del generador.
 - `assets/` almacena los recursos visuales utilizados por el repositorio.
 
 ---
@@ -332,7 +365,7 @@ Algunas mejoras planteadas para futuras versiones:
 - [ ] Permitir excluir determinados símbolos.
 - [x] Separar la lógica de generación de la interfaz CLI.
 - [ ] Añadir validaciones de entrada adicionales.
-- [ ] Incorporar pruebas automatizadas.
+- [x] Incorporar pruebas automatizadas.
 - [ ] Mejorar la experiencia de uso desde consola.
 
 ---
@@ -341,11 +374,13 @@ Algunas mejoras planteadas para futuras versiones:
 
 PassForge me permitió practicar y reforzar conceptos como:
 
-`Python` · `random` · `secrets` · `string` · `CLI` · `validación` · `aleatoriedad` · `modularización` · `código seguro`
+`Python` · `random` · `secrets` · `string` · `CLI` · `unittest` · `testing` · `validación` · `aleatoriedad` · `modularización` · `código seguro`
 
 También sirvió como ejercicio para revisar una solución anterior y documentar su evolución en lugar de reemplazarla sin conservar el razonamiento detrás de los cambios.
 
 La separación entre `generator.py` y `cli.py` añade además una nueva etapa al proyecto: desacoplar la lógica principal de la interfaz que la utiliza.
+
+Las pruebas automatizadas permiten verificar el comportamiento esperado del generador y detectar regresiones antes de continuar incorporando nuevas funcionalidades o interfaces.
 
 ---
 
