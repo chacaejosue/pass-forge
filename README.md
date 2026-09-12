@@ -41,9 +41,11 @@ La primera versión (`v1`) utilizaba el módulo `random`. Posteriormente revisé
 
 A partir de esa revisión desarrollé una segunda versión (`v2`) utilizando `secrets`, junto con una longitud mínima y reglas básicas sobre los caracteres generados.
 
-El repositorio conserva ambas versiones con un propósito educativo:
+La versión actual también separa la lógica de generación de la interacción por consola, permitiendo reutilizar el generador desde otras interfaces en el futuro.
 
-> Mostrar cómo una solución funcional puede evolucionar cuando se revisan sus decisiones de diseño y seguridad.
+El repositorio conserva la implementación original junto con la versión actual con un propósito educativo:
+
+> Mostrar cómo una solución funcional puede evolucionar cuando se revisan sus decisiones de diseño, seguridad y estructura.
 
 ---
 
@@ -56,14 +58,16 @@ El repositorio conserva ambas versiones con un propósito educativo:
 
 ### Ejecutar la versión actual
 
+Desde la raíz del proyecto:
+
 ```bash
-python src/v2_generador_seguro.py
+python -m src.cli
 ```
 
 El programa solicita la longitud de la contraseña y aplica una longitud mínima de **12 caracteres**.
 
 > [!WARNING]
-> La versión ubicada en `legacy/` se conserva únicamente como referencia educativa. Para utilizar el generador, ejecuta la versión disponible en `src/`.
+> La implementación ubicada en `legacy/` se conserva únicamente como referencia educativa. Para utilizar la versión actual, ejecuta la interfaz disponible en `src.cli`.
 
 ---
 
@@ -74,16 +78,20 @@ pass-forge/
 ├── assets/
 │   └── portada-passforge.png
 ├── legacy/
-│   └── v1_generador_base.py
+│   └── generator_v1.py
 ├── src/
-│   └── v2_generador_seguro.py
+│   ├── __init__.py
+│   ├── cli.py
+│   └── generator.py
 ├── .gitignore
 ├── LICENSE
 └── README.md
 ```
 
-- `legacy/` contiene la implementación original.
-- `src/` contiene la versión actual del generador.
+- `legacy/` conserva la implementación original basada en `random`.
+- `src/generator.py` contiene la lógica de generación de contraseñas.
+- `src/cli.py` contiene la interacción mediante consola.
+- `src/__init__.py` permite utilizar `src` como paquete de Python.
 - `assets/` almacena los recursos visuales utilizados por el repositorio.
 
 ---
@@ -134,23 +142,50 @@ Además, la primera implementación:
 
 ## v2 — Implementación mejorada
 
-La segunda versión sustituye `random` por `secrets`.
+La segunda versión sustituye `random` por `secrets` y separa la lógica de generación de la interacción por consola.
+
+La lógica principal se encuentra en `src/generator.py`:
 
 ```python
 import secrets
 import string
 
-def generador():
-    letras = string.ascii_letters
-    numeros = string.digits
-    simbolos = string.punctuation
 
-    caracteres = letras + numeros + simbolos
+MIN_LENGTH = 12
 
-    # longitud mínima: 12
-    # generación utilizando secrets
-    # validación de diferentes clases de caracteres
+
+def generate_password(length):
+    if length < MIN_LENGTH:
+        length = MIN_LENGTH
+
+    lowercase = string.ascii_lowercase
+    uppercase = string.ascii_uppercase
+    digits = string.digits
+    symbols = string.punctuation
+
+    characters = [
+        secrets.choice(uppercase),
+        secrets.choice(lowercase),
+        secrets.choice(digits),
+        secrets.choice(symbols),
+    ]
+
+    all_characters = lowercase + uppercase + digits + symbols
+    remaining = length - len(characters)
+
+    characters.extend(
+        secrets.choice(all_characters)
+        for _ in range(remaining)
+    )
+
+    for i in range(len(characters) - 1, 0, -1):
+        j = secrets.randbelow(i + 1)
+        characters[i], characters[j] = characters[j], characters[i]
+
+    return "".join(characters)
 ```
+
+La interfaz de consola se encuentra en `src/cli.py` y utiliza esta función para solicitar la longitud al usuario y mostrar la contraseña generada.
 
 ### `secrets`
 
@@ -167,7 +202,9 @@ Este es el cambio más importante entre ambas versiones.
 
 La versión actual utiliza una longitud mínima de **12 caracteres**.
 
-Si el usuario introduce una longitud inferior, el programa la ajusta al mínimo establecido.
+Si se solicita una longitud inferior, la lógica del generador la ajusta automáticamente al mínimo establecido.
+
+La interfaz CLI informa al usuario cuando se realiza este ajuste.
 
 ### Reglas de composición
 
@@ -180,6 +217,24 @@ La contraseña generada incluye al menos:
 
 Estas reglas evitan resultados que, por azar, contengan únicamente una clase de caracteres.
 
+### Separación entre lógica e interfaz
+
+La versión actual divide el programa en dos responsabilidades principales:
+
+```text
+src/cli.py
+    │
+    │ solicita y valida la entrada del usuario
+    ▼
+src/generator.py
+    │
+    │ genera la contraseña
+    ▼
+resultado
+```
+
+`generator.py` no depende de `input()` ni de `print()`, por lo que la lógica puede reutilizarse desde otras interfaces sin modificar el funcionamiento interno del generador.
+
 ---
 
 ## Comparación entre versiones
@@ -187,12 +242,13 @@ Estas reglas evitan resultados que, por azar, contengan únicamente una clase de
 | Característica | v1 | v2 |
 |---|---|---|
 | Fuente de aleatoriedad | `random` | `secrets` |
-| Tipo de generador | PRNG de propósito general | CSPRNG |
+| Tipo de aleatoriedad | PRNG de propósito general | Fuente criptográficamente segura |
 | Longitud mínima | 10 | 12 |
 | Mayúsculas | No garantizadas | Garantizadas |
 | Minúsculas | No garantizadas | Garantizadas |
 | Números | No garantizados | Garantizados |
 | Símbolos | No garantizados | Garantizados |
+| Separación entre lógica e interfaz | No | Sí |
 | Uso dentro del proyecto | Referencia educativa | Versión actual |
 
 ---
@@ -214,7 +270,13 @@ random.choice(...)
 a una generación basada en:
 
 ```python
-secrets
+secrets.choice(...)
+```
+
+y:
+
+```python
+secrets.randbelow(...)
 ```
 
 ---
@@ -222,9 +284,8 @@ secrets
 ## Ejemplo de ejecución
 
 ```text
-Longitud de la contraseña: 16
-
-Tu contraseña: ***************
+Longitud de la contraseña (mínimo 12): 16
+Tu contraseña segura: ****************
 ```
 
 La contraseña mostrada arriba es únicamente ilustrativa.
@@ -232,10 +293,17 @@ La contraseña mostrada arriba es únicamente ilustrativa.
 Si se introduce una longitud inferior al mínimo:
 
 ```text
-Longitud de la contraseña: 8
-
+Longitud de la contraseña (mínimo 12): 8
 Por seguridad, ajustaremos la longitud a 12.
-Tu contraseña: ************
+Tu contraseña segura: ************
+```
+
+Si la entrada no corresponde a un número:
+
+```text
+Longitud de la contraseña (mínimo 12): hola
+"hola" no es un número válido.
+Longitud de la contraseña (mínimo 12):
 ```
 
 ---
@@ -262,7 +330,7 @@ Algunas mejoras planteadas para futuras versiones:
 
 - [ ] Permitir seleccionar los conjuntos de caracteres utilizados.
 - [ ] Permitir excluir determinados símbolos.
-- [ ] Separar mejor la lógica de generación de la interfaz CLI.
+- [x] Separar la lógica de generación de la interfaz CLI.
 - [ ] Añadir validaciones de entrada adicionales.
 - [ ] Incorporar pruebas automatizadas.
 - [ ] Mejorar la experiencia de uso desde consola.
@@ -273,9 +341,11 @@ Algunas mejoras planteadas para futuras versiones:
 
 PassForge me permitió practicar y reforzar conceptos como:
 
-`Python` · `random` · `secrets` · `string` · `CLI` · `validación` · `aleatoriedad` · `código seguro`
+`Python` · `random` · `secrets` · `string` · `CLI` · `validación` · `aleatoriedad` · `modularización` · `código seguro`
 
 También sirvió como ejercicio para revisar una solución anterior y documentar su evolución en lugar de reemplazarla sin conservar el razonamiento detrás de los cambios.
+
+La separación entre `generator.py` y `cli.py` añade además una nueva etapa al proyecto: desacoplar la lógica principal de la interfaz que la utiliza.
 
 ---
 
