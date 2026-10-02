@@ -1,6 +1,6 @@
 <p align="center">
   <img
-    src="./assets/portada-passforge.png"
+    src="./assets/portada-passforge.svg"
     alt="PassForge — Generador de contraseñas en Python"
     width="100%"
   />
@@ -163,7 +163,7 @@ OK
 ```text
 pass-forge/
 ├── assets/
-│   └── portada-passforge.png
+│   └── portada-passforge.svg
 ├── legacy/
 │   └── generator_v1.py
 ├── src/
