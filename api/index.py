@@ -1,4 +1,4 @@
-"""Compatibility entry point for local Flask commands."""
+"""Vercel entry point for the Flask API."""
 
 from backend.passforge.app import app
 

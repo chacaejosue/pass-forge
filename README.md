@@ -10,7 +10,7 @@
   Generador de contraseñas desarrollado en Python que documenta
   la evolución de una implementación educativa basada en <code>random</code>
   hacia una versión mejorada utilizando <code>secrets</code>,
-  con interfaces CLI y web en desarrollo.
+  con interfaces CLI y web mediante Flask y Astro.
 </p>
 
 <p align="center">
@@ -31,8 +31,8 @@
     alt="Licencia MIT"
   />
   <img
-    src="https://img.shields.io/badge/Estado-En%20desarrollo-f59e0b?style=for-the-badge"
-    alt="Estado: En desarrollo"
+    src="https://img.shields.io/badge/Estado-v2%20web%20activa-0ea5a5?style=for-the-badge"
+    alt="Estado: v2 web activa"
   />
 </p>
 
@@ -48,7 +48,7 @@ A partir de esa revisión desarrollé una segunda versión (`v2`) utilizando `se
 
 La versión actual separa la lógica de generación de la interacción por consola, permitiendo reutilizar el generador desde otras interfaces.
 
-Como siguiente etapa, PassForge comienza su transición hacia una aplicación web mediante Flask. Actualmente la capa web contiene una aplicación mínima y una ruta inicial para comprobar el funcionamiento del servidor. La generación de contraseñas todavía permanece desacoplada de esta interfaz.
+PassForge evoluciona ahora hacia una aplicación web moderna: Flask expone una API REST en Python y Astro proporciona una interfaz rápida y accesible. La contraseña se genera en el backend con `secrets`, no se almacena ni se registra.
 
 El repositorio conserva la implementación original junto con la versión actual con un propósito educativo:
 
@@ -108,12 +108,12 @@ El programa solicita la longitud de la contraseña y aplica una longitud mínima
 
 ### Ejecutar la aplicación web
 
-La aplicación web se encuentra actualmente en una etapa inicial de desarrollo.
+El backend Flask expone el generador mediante una API REST.
 
 Desde la raíz del proyecto:
 
 ```bash
-python -m flask --app src.web run --debug
+python -m flask --app backend.passforge.app run --debug
 ```
 
 Flask iniciará un servidor local disponible normalmente en:
@@ -122,9 +122,29 @@ Flask iniciará un servidor local disponible normalmente en:
 http://127.0.0.1:5000
 ```
 
-Al acceder desde el navegador se mostrará una respuesta básica que permite comprobar que la aplicación Flask está funcionando.
+Puedes comprobar el servicio en `http://127.0.0.1:5000/api/health`. El endpoint `POST /api/passwords` recibe la longitud y los tipos de caracteres seleccionados.
 
-La generación de contraseñas todavía no está integrada con esta interfaz.
+### Ejecutar el frontend Astro
+
+Desde otra terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+La interfaz estará disponible normalmente en `http://localhost:4321`. Para conectar un backend remoto, define `PUBLIC_API_URL` en un archivo `.env` dentro de `frontend`.
+
+### Cómo interpretar la entropía
+
+La interfaz muestra una **estimación**, no una garantía. Con las cuatro categorías activadas se utiliza un alfabeto de 94 caracteres, por lo que 12 caracteres representan aproximadamente `78.7 bits` bajo una selección uniforme. El tiempo mostrado supone una búsqueda exhaustiva a `10¹¹` intentos por segundo y no representa todos los ataques posibles.
+
+La seguridad real también depende del servicio donde se use la contraseña, su almacenamiento, la ausencia de filtraciones, la no reutilización y la seguridad del dispositivo. PassForge no guarda ni registra las contraseñas generadas.
+
+### Despliegue en Vercel
+
+El repositorio incluye `api/index.py` y `vercel.json` para desplegar el backend Flask como función Python. Puedes crear un proyecto Vercel con la raíz del repositorio para la API y otro con `frontend/` como raíz para Astro. En el proyecto frontend, define `PUBLIC_API_URL` con la URL pública de la API.
 
 ---
 
@@ -138,6 +158,7 @@ Desde la raíz del proyecto:
 
 ```bash
 python -m unittest discover -s tests -v
+python -m unittest discover -s backend/tests -v
 ```
 
 Las pruebas verifican que:
@@ -164,6 +185,23 @@ OK
 pass-forge/
 ├── assets/
 │   └── portada-passforge.svg
+├── api/
+│   └── index.py
+├── backend/
+│   ├── passforge/
+│   │   ├── app.py
+│   │   ├── generator.py
+│   │   └── routes.py
+│   └── tests/
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   └── components/
+│   │       └── PasswordManagerGuide.astro
+│   ├── .env.example
+│   ├── package-lock.json
+│   ├── package.json
+│   └── astro.config.mjs
 ├── legacy/
 │   └── generator_v1.py
 ├── src/
@@ -176,17 +214,25 @@ pass-forge/
 ├── .gitignore
 ├── LICENSE
 ├── README.md
-└── requirements.txt
+├── requirements.txt
+└── vercel.json
 ```
 
 - `legacy/` conserva la implementación original basada en `random`.
-- `src/generator.py` contiene la lógica de generación de contraseñas.
+- `backend/passforge/generator.py` contiene la lógica de generación de contraseñas.
+- `backend/passforge/routes.py` contiene los endpoints de la API Flask.
+- `backend/passforge/app.py` crea la aplicación Flask.
+- `frontend/` contiene la interfaz Astro, estilos y recursos públicos.
+- `frontend/src/components/PasswordManagerGuide.astro` orienta sobre el almacenamiento seguro.
+- `api/index.py` es el punto de entrada serverless para Vercel.
+- `src/generator.py` mantiene compatibilidad con la CLI y las primeras pruebas.
 - `src/cli.py` contiene la interacción mediante consola.
-- `src/web.py` contiene la aplicación Flask inicial.
+- `src/web.py` mantiene compatibilidad con el comando Flask original.
 - `src/__init__.py` permite utilizar `src` como paquete de Python.
 - `tests/test_generator.py` contiene las pruebas automatizadas del generador.
 - `assets/` almacena los recursos visuales utilizados por el repositorio.
-- `requirements.txt` declara las dependencias externas del proyecto.
+- `requirements.txt` incluye las dependencias del backend Python.
+- `frontend/package.json` y `frontend/package-lock.json` gestionan las dependencias del frontend.
 
 ---
 
@@ -238,7 +284,7 @@ Además, la primera implementación:
 
 La segunda versión sustituye `random` por `secrets` y separa la lógica de generación de la interacción por consola.
 
-La lógica principal se encuentra en `src/generator.py`:
+La implementación histórica de esta etapa se conserva en `src/generator.py`:
 
 ```python
 import secrets
@@ -279,7 +325,7 @@ def generate_password(length):
     return "".join(characters)
 ```
 
-La interfaz de consola se encuentra en `src/cli.py` y utiliza esta función para solicitar la longitud al usuario y mostrar la contraseña generada.
+La CLI mantiene compatibilidad con esta interfaz histórica. La implementación reutilizable actual se encuentra en `backend/passforge/generator.py` y la API Flask la utiliza directamente.
 
 ### `secrets`
 
@@ -331,47 +377,40 @@ resultado
 
 ---
 
-## Aplicación web — Etapa inicial
+## Aplicación web actual
 
 PassForge incorpora Flask como primer paso para añadir una interfaz web.
 
-La aplicación inicial se encuentra en:
+La aplicación web actual se organiza en:
 
 ```text
-src/web.py
+backend/passforge/app.py
 ```
 
-Actualmente contiene una ruta básica:
+La API incluye rutas de salud y generación de contraseñas:
 
 ```python
-from flask import Flask
-
-
-app = Flask(__name__)
-
-
-@app.get("/")
-def index():
-    return "PassForge está funcionando"
+GET  /api/health
+POST /api/passwords
 ```
 
-Esta etapa permite introducir conceptos básicos como:
+La implementación actual permite trabajar con conceptos como:
 
 - servidor web;
 - aplicación Flask;
 - rutas;
 - peticiones HTTP;
-- respuestas HTTP.
+- respuestas JSON;
+- validación de entradas;
+- despliegue serverless.
 
-Por el momento, la aplicación web y el generador permanecen desacoplados:
+El flujo actual integra la API con el generador:
 
 ```text
-CLI ──────→ generator.py
+CLI ──────→ src/generator.py ──────→ backend/passforge/generator.py
 
-WEB ──────→ respuesta básica de Flask
+WEB ──────→ api/index.py ──────→ Flask ──────→ secrets
 ```
-
-La integración entre Flask y `generate_password()` se realizará en una etapa posterior.
 
 ---
 
@@ -447,24 +486,24 @@ Longitud de la contraseña (mínimo 12): hola
 Longitud de la contraseña (mínimo 12):
 ```
 
-### Web
+### API web
 
 Al ejecutar:
 
 ```bash
-python -m flask --app src.web run --debug
+python -m flask --app backend.passforge.app run --debug
 ```
 
-y visitar:
+y visitar el endpoint de salud:
 
 ```text
-http://127.0.0.1:5000
+http://127.0.0.1:5000/api/health
 ```
 
-la aplicación responde actualmente:
+la API responde:
 
 ```text
-PassForge está funcionando
+{"service":"passforge-api","status":"ok"}
 ```
 
 ---
@@ -483,7 +522,7 @@ Entre otras cosas, un sistema completo de gestión de credenciales también debe
 - integración con otros sistemas;
 - políticas y requisitos específicos del entorno donde se utilice.
 
-La aplicación Flask se encuentra todavía en una etapa inicial y actualmente no procesa ni transmite contraseñas.
+La API procesa la solicitud y transmite la contraseña al navegador para que el usuario pueda verla y copiarla, pero no la almacena ni la registra. En producción debe utilizarse HTTPS y configurarse `FRONTEND_URL` con el origen real del frontend.
 
 ---
 
