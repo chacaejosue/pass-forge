@@ -4,7 +4,10 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   adapter: vercel(),
-  // Astro y Tailwind pueden resolver versiones distintas de Vite en el árbol npm.
-  // @ts-expect-error La incompatibilidad solo afecta a los tipos duplicados de Vite.
-  vite: { plugins: [tailwindcss()] },
+  vite: {
+    // Astro y Tailwind pueden resolver versiones distintas de Vite en el árbol npm.
+    // @ts-ignore La incompatibilidad solo afecta a los tipos duplicados de Vite.
+    plugins: [tailwindcss()],
+    server: { proxy: { "/api": "http://127.0.0.1:5000" } },
+  },
 });

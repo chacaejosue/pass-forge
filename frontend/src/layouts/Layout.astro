@@ -8,6 +8,12 @@ const { title = "PassForge — Generador seguro de contraseñas", description = 
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script is:inline>
+      const savedTheme = localStorage.getItem("passforge-theme");
+      const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme = savedTheme === "light" || savedTheme === "dark" ? savedTheme : systemDark ? "dark" : "light";
+    </script>
     <title>{title}</title>
   </head>
   <body><slot /></body>
