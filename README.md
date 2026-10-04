@@ -48,7 +48,7 @@ A partir de esa revisión desarrollé una segunda versión (`v2`) utilizando `se
 
 La versión actual separa la lógica de generación de la interacción por consola, permitiendo reutilizar el generador desde otras interfaces.
 
-Como siguiente etapa, PassForge comienza su transición hacia una aplicación web mediante Flask. Actualmente la capa web contiene una aplicación mínima y una ruta inicial para comprobar el funcionamiento del servidor. La generación de contraseñas todavía permanece desacoplada de esta interfaz.
+PassForge evoluciona ahora hacia una aplicación web moderna: Flask expone una API REST en Python y Astro proporciona una interfaz rápida y accesible. La contraseña se genera en el backend con `secrets`, no se almacena ni se registra.
 
 El repositorio conserva la implementación original junto con la versión actual con un propósito educativo:
 
@@ -108,12 +108,12 @@ El programa solicita la longitud de la contraseña y aplica una longitud mínima
 
 ### Ejecutar la aplicación web
 
-La aplicación web se encuentra actualmente en una etapa inicial de desarrollo.
+El backend Flask expone el generador mediante una API REST.
 
 Desde la raíz del proyecto:
 
 ```bash
-python -m flask --app src.web run --debug
+python -m flask --app backend.passforge.app run --debug
 ```
 
 Flask iniciará un servidor local disponible normalmente en:
@@ -122,9 +122,23 @@ Flask iniciará un servidor local disponible normalmente en:
 http://127.0.0.1:5000
 ```
 
-Al acceder desde el navegador se mostrará una respuesta básica que permite comprobar que la aplicación Flask está funcionando.
+Puedes comprobar el servicio en `http://127.0.0.1:5000/api/health`. El endpoint `POST /api/passwords` recibe la longitud y los tipos de caracteres seleccionados.
 
-La generación de contraseñas todavía no está integrada con esta interfaz.
+### Ejecutar el frontend Astro
+
+Desde otra terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+La interfaz estará disponible normalmente en `http://localhost:4321`. Para conectar un backend remoto, define `PUBLIC_API_URL` en un archivo `.env` dentro de `frontend`.
+
+### Despliegue en Vercel
+
+El repositorio incluye `api/index.py` y `vercel.json` para desplegar el backend Flask como función Python. Puedes crear un proyecto Vercel con la raíz del repositorio para la API y otro con `frontend/` como raíz para Astro. En el proyecto frontend, define `PUBLIC_API_URL` con la URL pública de la API.
 
 ---
 
@@ -138,6 +152,7 @@ Desde la raíz del proyecto:
 
 ```bash
 python -m unittest discover -s tests -v
+python -m unittest discover -s backend/tests -v
 ```
 
 Las pruebas verifican que:
@@ -164,6 +179,18 @@ OK
 pass-forge/
 ├── assets/
 │   └── portada-passforge.svg
+├── api/
+│   └── index.py
+├── backend/
+│   ├── passforge/
+│   │   ├── app.py
+│   │   ├── generator.py
+│   │   └── routes.py
+│   └── tests/
+├── frontend/
+│   ├── src/
+│   ├── package.json
+│   └── astro.config.mjs
 ├── legacy/
 │   └── generator_v1.py
 ├── src/
@@ -176,13 +203,19 @@ pass-forge/
 ├── .gitignore
 ├── LICENSE
 ├── README.md
-└── requirements.txt
+├── requirements.txt
+└── vercel.json
 ```
 
 - `legacy/` conserva la implementación original basada en `random`.
-- `src/generator.py` contiene la lógica de generación de contraseñas.
+- `backend/passforge/generator.py` contiene la lógica de generación de contraseñas.
+- `backend/passforge/routes.py` contiene los endpoints de la API Flask.
+- `backend/passforge/app.py` crea la aplicación Flask.
+- `frontend/` contiene la interfaz Astro y sus estilos.
+- `api/index.py` es el punto de entrada serverless para Vercel.
+- `src/generator.py` mantiene compatibilidad con la CLI y las primeras pruebas.
 - `src/cli.py` contiene la interacción mediante consola.
-- `src/web.py` contiene la aplicación Flask inicial.
+- `src/web.py` mantiene compatibilidad con el comando Flask original.
 - `src/__init__.py` permite utilizar `src` como paquete de Python.
 - `tests/test_generator.py` contiene las pruebas automatizadas del generador.
 - `assets/` almacena los recursos visuales utilizados por el repositorio.
