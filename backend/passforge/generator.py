@@ -1,0 +1,54 @@
+"""Cryptographically secure password generation."""
+
+from __future__ import annotations
+
+import math
+import secrets
+import string
+
+MIN_LENGTH = 12
+MAX_LENGTH = 128
+
+
+def generate_password(
+    length: int,
+    *,
+    lowercase: bool = True,
+    uppercase: bool = True,
+    digits: bool = True,
+    symbols: bool = True,
+) -> str:
+    """Generate a password using Python's cryptographically secure RNG."""
+    if not isinstance(length, int) or isinstance(length, bool):
+        raise TypeError("length must be an integer")
+    if length < MIN_LENGTH:
+        length = MIN_LENGTH
+    if length > MAX_LENGTH:
+        raise ValueError(f"length cannot exceed {MAX_LENGTH}")
+
+    pools = []
+    if lowercase:
+        pools.append(string.ascii_lowercase)
+    if uppercase:
+        pools.append(string.ascii_uppercase)
+    if digits:
+        pools.append(string.digits)
+    if symbols:
+        pools.append(string.punctuation)
+    if not pools:
+        raise ValueError("at least one character set must be enabled")
+
+    if length < len(pools):
+        raise ValueError("length is too short for the selected character sets")
+
+    characters = [secrets.choice(pool) for pool in pools]
+    alphabet = "".join(pools)
+    characters.extend(secrets.choice(alphabet) for _ in range(length - len(pools)))
+
+    secrets.SystemRandom().shuffle(characters)
+    return "".join(characters)
+
+
+def estimate_entropy(length: int, alphabet_size: int) -> float:
+    """Estimate password entropy in bits for display purposes."""
+    return round(length * math.log2(alphabet_size), 1)
