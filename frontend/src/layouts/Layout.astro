@@ -1,0 +1,14 @@
+---
+import "../styles/global.css";
+const { title = "PassForge — Generador seguro de contraseñas", description = "Genera contraseñas seguras con Python, Flask y secrets." } = Astro.props;
+---
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+  </head>
+  <body><slot /></body>
+</html>
