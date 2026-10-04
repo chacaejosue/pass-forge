@@ -4,5 +4,45 @@ __pycache__/
 *$py.class
 
 # Entornos virtuales
+.venv/
 venv/
 env/
+
+# Variables de entorno y credenciales locales
+.env
+.env.*
+!.env.example
+*.local
+*.secret
+secrets/
+credentials/
+
+# Claves y certificados privados
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.astro/
+.vercel/
+frontend/.vercel/
+*.tsbuildinfo
+
+# Logs y resultados de herramientas
+*.log
+coverage/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Sistema operativo y editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
