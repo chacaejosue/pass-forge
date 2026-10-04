@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 
-from .generator import MAX_LENGTH, MIN_LENGTH, estimate_entropy, generate_password
+from .generator import (
+    MAX_LENGTH,
+    MIN_LENGTH,
+    estimate_entropy,
+    estimate_exhaustive_years,
+    generate_password,
+)
 
 api = Blueprint("api", __name__)
 
@@ -53,5 +59,10 @@ def passwords():
         password=password,
         length=len(password),
         entropy=estimate_entropy(len(password), alphabet_size),
+        estimated_exhaustive_years=estimate_exhaustive_years(
+            estimate_entropy(len(password), alphabet_size)
+        ),
+        guesses_per_second=100_000_000_000,
+        entropy_note="Estimación para una selección uniforme del alfabeto indicado.",
         minimum_length=MIN_LENGTH,
     )

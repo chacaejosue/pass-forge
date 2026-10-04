@@ -52,3 +52,12 @@ def generate_password(
 def estimate_entropy(length: int, alphabet_size: int) -> float:
     """Estimate password entropy in bits for display purposes."""
     return round(length * math.log2(alphabet_size), 1)
+
+
+def estimate_exhaustive_years(
+    entropy: float,
+    guesses_per_second: int = 100_000_000_000,
+) -> float:
+    """Estimate a full keyspace search under an explicit attack assumption."""
+    seconds = 2**entropy / guesses_per_second
+    return round(seconds / (60 * 60 * 24 * 365.25), 1)
